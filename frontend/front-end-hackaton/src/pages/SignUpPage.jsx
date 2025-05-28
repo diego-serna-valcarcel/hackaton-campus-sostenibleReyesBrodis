@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Boton } from "../componentes/Boton";
+import Header from "../componentes/Header";
 
 const SignUpPage = () => {
   const [email, setEmail] = useState("");
@@ -59,57 +60,60 @@ const SignUpPage = () => {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "60px auto", padding: 24, border: "1px solid #ddd", borderRadius: 8 }}>
-      <h2 style={{ textAlign: "center" }}>Registro</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 16 }}>
-          <input
-            type="email"
-            placeholder="Correo electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
-          />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <input
-            type="text"
-            placeholder="Usuario"
-            value={usuario}
-            onChange={(e) => setUsuario(e.target.value)}
-            required
-            style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
-          />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
-          />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <input
-            type="password"
-            placeholder="Repetir contraseña"
-            value={repeatPassword}
-            onChange={(e) => setRepeatPassword(e.target.value)}
-            required
-            style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
-          />
-        </div>
-        {error && (
-          <div style={{ color: "red", marginBottom: 16, textAlign: "center" }}>
-            {error}
+    <>
+      <Header />
+      <div style={{ maxWidth: 400, margin: "60px auto", padding: 24, border: "1px solid #ddd", borderRadius: 8 }}>
+        <h2 style={{ textAlign: "center" }}>Registro</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <input
+              type="email"
+              placeholder="Correo electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+            />
           </div>
-        )}
-        <Boton texto="Registrarse" type="submit" />
-      </form>
-    </div>
+          <div style={{ marginBottom: 16 }}>
+            <input
+              type="text"
+              placeholder="Usuario"
+              value={usuario}
+              onChange={(e) => setUsuario(e.target.value)}
+              required
+              style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+            />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+            />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <input
+              type="password"
+              placeholder="Repetir contraseña"
+              value={repeatPassword}
+              onChange={(e) => setRepeatPassword(e.target.value)}
+              required
+              style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+            />
+          </div>
+          {error && (
+            <div style={{ color: "red", marginBottom: 16, textAlign: "center" }}>
+              {error}
+            </div>
+          )}
+          <Boton texto="Registrarse" type="submit" />
+        </form>
+      </div>
+    </>
   );
 };
 

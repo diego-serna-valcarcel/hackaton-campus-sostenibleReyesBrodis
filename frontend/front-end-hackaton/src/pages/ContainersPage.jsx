@@ -40,9 +40,12 @@ const containersHistory = [
 ];
 
 const ContainersPage = () => {
-  const [ubicacion, setUbicacion] = useState("");
-  const [filteredContainers, setFilteredContainers] = useState([]);
-  const [showOver75, setShowOver75] = useState(false);
+    const [centro, setCentro] = useState("");
+    const [ubicacion, setUbicacion] = useState("");
+    const [containersData, setContainersData] = useState([]);
+    const [filteredContainers, setFilteredContainers] = useState([]);
+    const [showOver75, setShowOver75] = useState(false);
+    const [tipo, setTipo] = useState("");
 
   // Para histórico
   const [historyId, setHistoryId] = useState("");
@@ -50,39 +53,79 @@ const ContainersPage = () => {
   const [endDate, setEndDate] = useState("");
   const [historyResults, setHistoryResults] = useState([]);
 
-  // Filtrar por ubicación
-  const handleFilterByUbicacion = (e) => {
+  const handleFilterByUbicacion = async (e) => {
     e.preventDefault();
     setShowOver75(false);
-    const filtered = containersData.filter((c) =>
-      c.ubicacion.toLowerCase().includes(ubicacion.toLowerCase())
-    );
-    setFilteredContainers(filtered);
+
+    if (!centro) {
+      setFilteredContainers([]);
+      return;
+    }
+
+    let url = "";
+    if (ubicacion && tipo) {
+      url = `http://localhost:8080/contenedores/search?center=${encodeURIComponent(centro)}&location=${encodeURIComponent(ubicacion)}&type=${encodeURIComponent(tipo)}`;
+    } else if (ubicacion) {
+      url = `http://localhost:8080/contenedores/search?center=${encodeURIComponent(centro)}&location=${encodeURIComponent(ubicacion)}`;
+    } else if (tipo) {
+      url = `http://localhost:8080/contenedores/search?center=${encodeURIComponent(centro)}&type=${encodeURIComponent(tipo)}`;
+    } else {
+      url = `http://localhost:8080/contenedores/center/${encodeURIComponent(centro)}`;
+    }
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      setContainersData(data);
+      setFilteredContainers(data);
+    } catch (err) {
+      setContainersData([]);
+      setFilteredContainers([]);
+    }
   };
 
-  // Mostrar contenedores con capacidad > 75%
+
   const handleShowOver75 = () => {
     setShowOver75(true);
-    const filtered = containersData.filter((c) => c.capacidad > 75);
+    const filtered = (filteredContainers.length > 0 ? filteredContainers : containersData).filter((c) => c.capacidad > 75);
     setFilteredContainers(filtered);
   };
 
   // Buscar histórico
-  const handleHistorySearch = (e) => {
+  const handleHistorySearch = async (e) => {
     e.preventDefault();
     if (!historyId || !startDate || !endDate) {
       setHistoryResults([]);
       return;
     }
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const filtered = containersHistory.filter(
-      (h) =>
-        h.id === Number(historyId) &&
-        new Date(h.fechaHora) >= start &&
-        new Date(h.fechaHora) <= end
-    );
-    setHistoryResults(filtered);
+  
+    try {
+      const res = await fetch("https://hackaton-campus-sostenible-api.mmartinez-d6a.workers.dev/containers/measurements");
+      const data = await res.json();
+  
+      // Busca el contenedor por ID
+      const contenedor = data.find((c) => c.id === historyId || c.id === Number(historyId));
+      if (!contenedor) {
+        setHistoryResults([]);
+        return;
+      }
+  
+      // Filtra el histórico por rango de fechas
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+  
+      const filteredHistory = contenedor.history.filter((h) => {
+        const fecha = new Date(h.timestamp);
+        return fecha >= start && fecha <= end;
+      });
+  
+      // Opcional: ordenar por fecha
+      filteredHistory.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  
+      setHistoryResults(filteredHistory);
+    } catch (err) {
+      setHistoryResults([]);
+    }
   };
 
   return (
@@ -94,12 +137,27 @@ const ContainersPage = () => {
         {/* Filtro por ubicación */}
         <form onSubmit={handleFilterByUbicacion} style={{ marginBottom: 24, textAlign: "center" }}>
             <input
-            type="text"
-            placeholder="Buscar por ubicación"
-            value={ubicacion}
-            onChange={(e) => setUbicacion(e.target.value)}
-            style={{ padding: 8, borderRadius: 4, border: "1px solid #ccc", marginRight: 8 }}
+                type="text"
+                placeholder="Centro"
+                value={centro}
+                onChange={(e) => setCentro(e.target.value)}
+                style={{ padding: 8, borderRadius: 4, border: "1px solid #ccc", marginRight: 8 }}
+                required
             />
+            <input
+                type="text"
+                placeholder="Buscar por ubicación"
+                value={ubicacion}
+                onChange={(e) => setUbicacion(e.target.value)}
+                style={{ padding: 8, borderRadius: 4, border: "1px solid #ccc", marginRight: 8 }}
+            />
+            <input
+                type="text"
+                placeholder="Tipo"
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+                style={{ padding: 8, borderRadius: 4, border: "1px solid #ccc", marginRight: 8 }}
+                />
             <Boton texto="Buscar" />
         </form>
 
@@ -111,24 +169,28 @@ const ContainersPage = () => {
         {/* Tabla de contenedores */}
         <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 32 }}>
             <thead>
-            <tr>
+                <tr>
                 <th style={{ border: "1px solid #ccc", padding: 8 }}>ID</th>
-                <th style={{ border: "1px solid #ccc", padding: 8 }}>Ubicación</th>
+                <th style={{ border: "1px solid #ccc", padding: 8 }}>Centro</th>
+                <th style={{ border: "1px solid #ccc", padding: 8 }}>Localización</th>
                 <th style={{ border: "1px solid #ccc", padding: 8 }}>Tipo</th>
-                <th style={{ border: "1px solid #ccc", padding: 8 }}>Capacidad (%)</th>
-                <th style={{ border: "1px solid #ccc", padding: 8 }}>Última actualización</th>
-            </tr>
+                <th style={{ border: "1px solid #ccc", padding: 8 }}>Latitud</th>
+                <th style={{ border: "1px solid #ccc", padding: 8 }}>Longitud</th>
+                <th style={{ border: "1px solid #ccc", padding: 8 }}>Capacidad</th>
+                </tr>
             </thead>
             <tbody>
-            {(filteredContainers.length > 0 ? filteredContainers : containersData).map((c) => (
+                {(filteredContainers.length > 0 ? filteredContainers : containersData).map((c) => (
                 <tr key={c.id}>
-                <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.id}</td>
-                <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.ubicacion}</td>
-                <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.tipo}</td>
-                <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.capacidad}%</td>
-                <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.ultimaActualizacion}</td>
+                    <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.id}</td>
+                    <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.center}</td>
+                    <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.location}</td>
+                    <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.type}</td>
+                    <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.latitude}</td>
+                    <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.longitude}</td>
+                    <td style={{ border: "1px solid #ccc", padding: 8 }}>{c.capacity} {c.unit}</td>
                 </tr>
-            ))}
+                ))}
             </tbody>
         </table>
 
@@ -158,28 +220,23 @@ const ContainersPage = () => {
             <Boton texto="Buscar histórico" />
             </form>
             {historyResults.length > 0 && (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                <tr>
-                    <th style={{ border: "1px solid #ccc", padding: 8 }}>Fecha y hora</th>
-                    <th style={{ border: "1px solid #ccc", padding: 8 }}>Capacidad (%)</th>
-                </tr>
-                </thead>
-                <tbody>
-                {historyResults.map((h, idx) => (
-                    <tr key={idx}>
-                    <td style={{ border: "1px solid #ccc", padding: 8 }}>{h.fechaHora}</td>
-                    <td style={{ border: "1px solid #ccc", padding: 8 }}>{h.capacidad}%</td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-            )}
-            {historyResults.length === 0 && (
-            <div style={{ color: "#888", textAlign: "center", marginTop: 12 }}>
-                No hay datos para los filtros seleccionados.
-            </div>
-            )}
+  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <thead>
+      <tr>
+        <th style={{ border: "1px solid #ccc", padding: 8 }}>Fecha y hora</th>
+        <th style={{ border: "1px solid #ccc", padding: 8 }}>Capacidad (%)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {historyResults.map((h, idx) => (
+        <tr key={idx}>
+          <td style={{ border: "1px solid #ccc", padding: 8 }}>{h.timestamp}</td>
+          <td style={{ border: "1px solid #ccc", padding: 8 }}>{h.levelPercent}%</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)}
         </div>
         </div>
     </>
